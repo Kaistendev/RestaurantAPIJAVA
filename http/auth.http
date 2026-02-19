@@ -1,0 +1,14 @@
+### Variables Globales
+@baseUrl = http://localhost:8080/api/v1
+
+### Login Exitoso (Usando el usuario registrado en users.http)
+GET {{baseUrl}}/auth/login
+Authorization: Basic admin@restaurant.com password123
+
+### Login como Cliente
+GET {{baseUrl}}/auth/login
+Authorization: Basic juan@cliente.com password123
+
+### Login fallido
+GET {{baseUrl}}/auth/login
+Authorization: Basic incorrecto@email.com wrongpass

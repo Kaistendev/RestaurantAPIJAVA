@@ -1,0 +1,99 @@
+package dev.kaisten.RestaurantAPI.service;
+
+import dev.kaisten.RestaurantAPI.dto.UserRequestDTO;
+import dev.kaisten.RestaurantAPI.dto.UserResponseDTO;
+import dev.kaisten.RestaurantAPI.entity.User;
+import dev.kaisten.RestaurantAPI.exception.ResourceNotFoundException;
+import dev.kaisten.RestaurantAPI.mapper.UserMapper;
+import dev.kaisten.RestaurantAPI.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+
+@Service
+@RequiredArgsConstructor
+public class UserService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(), 
+                user.getPassword(), 
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponseDTO> findAll(Pageable pageable) {
+        return userRepository.findAll(pageable).map(userMapper::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public UserResponseDTO findById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+        return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public UserResponseDTO create(UserRequestDTO requestDTO) {
+        userRepository.findByEmail(requestDTO.email()).ifPresent(u -> {
+            throw new DataIntegrityViolationException("User with email " + requestDTO.email() + " already exists");
+        });
+
+        User user = userMapper.toEntity(requestDTO);
+        user.setPassword(passwordEncoder.encode(requestDTO.password()));
+        user = userRepository.save(user);
+        return userMapper.toDto(user);
+    }
+
+    @Transactional
+    public UserResponseDTO update(Long id, UserRequestDTO requestDTO) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if (!existingUser.getEmail().equals(requestDTO.email())) {
+            userRepository.findByEmail(requestDTO.email()).ifPresent(u -> {
+                throw new DataIntegrityViolationException("User with email " + requestDTO.email() + " already exists");
+            });
+        }
+
+        existingUser.setFirstName(requestDTO.firstName());
+        existingUser.setLastName(requestDTO.lastName());
+        existingUser.setEmail(requestDTO.email());
+        existingUser.setRole(requestDTO.role());
+
+        if (requestDTO.password() != null && !requestDTO.password().isEmpty()) {
+            existingUser.setPassword(passwordEncoder.encode(requestDTO.password()));
+        }
+
+        existingUser = userRepository.save(existingUser);
+        return userMapper.toDto(existingUser);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found with id: " + id);
+        }
+        userRepository.deleteById(id);
+    }
+}

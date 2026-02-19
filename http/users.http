@@ -1,0 +1,30 @@
+### Variables Globales
+@baseUrl = http://localhost:9191/api/v1
+
+### 1. Registrar un usuario como RESTAURANT (Dueño)
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "firstName": "Admin",
+    "lastName": "Restaurant",
+    "email": "admin@restaurant.com",
+    "password": "password123",
+    "role": "RESTAURANT"
+}
+
+### 2. Registrar un usuario como CLIENTE
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "firstName": "Juan",
+    "lastName": "Perez",
+    "email": "juan@cliente.com",
+    "password": "password123",
+    "role": "CLIENT"
+}
+
+### 3. Listar usuarios (Requiere Auth)
+GET {{baseUrl}}/users
+Authorization: Basic admin@restaurant.com password123

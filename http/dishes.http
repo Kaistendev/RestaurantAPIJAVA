@@ -1,0 +1,39 @@
+### Variables Globales
+@baseUrl = http://localhost:8080/api/v1
+@auth = Basic tu_usuario tu_password
+
+### Obtener todos los platos (Paginado)
+GET {{baseUrl}}/dishes?page=0&size=10
+Authorization: {{auth}}
+
+### Obtener plato por ID
+GET {{baseUrl}}/dishes/1
+Authorization: {{auth}}
+
+### Crear un nuevo plato
+POST {{baseUrl}}/dishes
+Content-Type: application/json
+Authorization: {{auth}}
+
+{
+    "name": "Pasta Carbonara",
+    "description": "Clásica pasta italiana con huevo, queso y guanciale",
+    "price": 12.50,
+    "active": true
+}
+
+### Actualizar un plato
+PUT {{baseUrl}}/dishes/1
+Content-Type: application/json
+Authorization: {{auth}}
+
+{
+    "name": "Pasta Carbonara Premium",
+    "description": "Pasta artesanal con trufa negra",
+    "price": 18.00,
+    "active": true
+}
+
+### Eliminar un plato
+DELETE {{baseUrl}}/dishes/1
+Authorization: {{auth}}

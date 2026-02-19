@@ -1,0 +1,39 @@
+### Variables Globales
+@baseUrl = http://localhost:8080/api/v1
+@auth = Basic tu_usuario tu_password
+
+### Obtener todas las mesas
+GET {{baseUrl}}/tables
+Authorization: {{auth}}
+
+### Obtener mesa por ID
+GET {{baseUrl}}/tables/1
+Authorization: {{auth}}
+
+### Crear una nueva mesa
+POST {{baseUrl}}/tables
+Content-Type: application/json
+Authorization: {{auth}}
+
+{
+    "tableNumber": 5,
+    "capacity": 4,
+    "isAvailable": true,
+    "restaurantId": 1
+}
+
+### Actualizar una mesa
+PUT {{baseUrl}}/tables/1
+Content-Type: application/json
+Authorization: {{auth}}
+
+{
+    "tableNumber": 5,
+    "capacity": 6,
+    "isAvailable": false,
+    "restaurantId": 1
+}
+
+### Eliminar una mesa
+DELETE {{baseUrl}}/tables/1
+Authorization: {{auth}}
