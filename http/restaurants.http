@@ -1,19 +1,19 @@
 ### Variables Globales
-@baseUrl = http://localhost:8080/api/v1
-@auth = Basic tu_usuario tu_password
+@baseUrl = http://localhost:9191/api/v1
+@authToken = ///CREDENCIALES
 
 ### Obtener todos los restaurantes
 GET {{baseUrl}}/restaurants
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Obtener restaurante por ID
 GET {{baseUrl}}/restaurants/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Crear un nuevo restaurante
 POST {{baseUrl}}/restaurants
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "La Trattoria",
@@ -25,7 +25,7 @@ Authorization: {{auth}}
 ### Actualizar un restaurante
 PUT {{baseUrl}}/restaurants/1
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "La Trattoria di Kaisten",
@@ -36,4 +36,4 @@ Authorization: {{auth}}
 
 ### Eliminar un restaurante
 DELETE {{baseUrl}}/restaurants/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}

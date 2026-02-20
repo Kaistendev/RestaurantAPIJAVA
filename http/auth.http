@@ -1,14 +1,44 @@
 ### Variables Globales
 @baseUrl = http://localhost:8080/api/v1
+@authToken = ///CREDENCIALES
 
-### Login Exitoso (Usando el usuario registrado en users.http)
-GET {{baseUrl}}/auth/login
-Authorization: Basic admin@restaurant.com password123
+### Registrar Usuario (Nuevo en JWT)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "firstName": "Juan",
+    "lastName": "Perez",
+    "email": "juan@cliente.com",
+    "password": "password123",
+    "role": "CLIENT"
+}
+
+### Login Exitoso
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@restaurant.com",
+    "password": "password123"
+}
 
 ### Login como Cliente
-GET {{baseUrl}}/auth/login
-Authorization: Basic juan@cliente.com password123
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "juan@cliente.com",
+    "password": "password123"
+}
 
 ### Login fallido
-GET {{baseUrl}}/auth/login
-Authorization: Basic incorrecto@email.com wrongpass
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "incorrecto@email.com",
+    "password": "wrongpass"
+}
+

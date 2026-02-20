@@ -28,10 +28,10 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
-
 @WebMvcTest(DishController.class)
 @AutoConfigureMockMvc
-@Import(dev.kaisten.RestaurantAPI.config.SecurityConfig.class)
+@Import({ dev.kaisten.RestaurantAPI.config.SecurityConfig.class,
+        dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
 public class DishControllerTest {
 
     @Autowired
@@ -42,9 +42,14 @@ public class DishControllerTest {
 
     @MockitoBean
     private UserDetailsService userDetailsService;
-    
-    @Autowired
-    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private dev.kaisten.RestaurantAPI.config.JwtService jwtService;
+
+    @MockitoBean
+    private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     public void getAllDishes_shouldReturnDishes() throws Exception {
@@ -57,7 +62,7 @@ public class DishControllerTest {
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].name").value("Test Dish"));
     }
-    
+
     @Test
     public void getDishById_shouldReturnDish() throws Exception {
         DishResponseDTO dish = new DishResponseDTO(1L, "Test Dish", "Test Description", BigDecimal.TEN, true);
@@ -73,9 +78,9 @@ public class DishControllerTest {
         DishRequestDTO request = new DishRequestDTO("New Dish", "Description", BigDecimal.ONE, true);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/dishes")
-                        .with(user("client").roles("CLIENT"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .with(user("client").roles("CLIENT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(MockMvcResultMatchers.status().isForbidden());
     }
 
@@ -83,13 +88,13 @@ public class DishControllerTest {
     public void createDish_whenRestaurant_shouldCreateDish() throws Exception {
         DishRequestDTO request = new DishRequestDTO("New Dish", "Description", BigDecimal.ONE, true);
         DishResponseDTO response = new DishResponseDTO(1L, "New Dish", "Description", BigDecimal.ONE, true);
-        
+
         when(dishService.create(any(DishRequestDTO.class))).thenReturn(response);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/dishes")
-                        .with(user("admin").roles("RESTAURANT"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .with(user("admin").roles("RESTAURANT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("New Dish"));
     }
@@ -98,13 +103,13 @@ public class DishControllerTest {
     public void updateDish_whenRestaurant_shouldUpdateDish() throws Exception {
         DishRequestDTO request = new DishRequestDTO("Updated Dish", "Description", BigDecimal.ONE, true);
         DishResponseDTO response = new DishResponseDTO(1L, "Updated Dish", "Description", BigDecimal.ONE, true);
-        
+
         when(dishService.update(eq(1L), any(DishRequestDTO.class))).thenReturn(response);
 
         mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/dishes/1")
-                        .with(user("admin").roles("RESTAURANT"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .with(user("admin").roles("RESTAURANT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Updated Dish"));
     }
@@ -113,7 +118,7 @@ public class DishControllerTest {
     public void deleteDish_whenRestaurant_shouldDeleteDish() throws Exception {
         doNothing().when(dishService).delete(1L);
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/dishes/1")
-                        .with(user("admin").roles("RESTAURANT")))
+                .with(user("admin").roles("RESTAURANT")))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 }

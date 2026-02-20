@@ -1,19 +1,20 @@
 ### Variables Globales
-@baseUrl = http://localhost:8080/api/v1
-@auth = Basic tu_usuario tu_password
+@baseUrl = http://localhost:9191/api/v1
+@authToken = ///CREDENCIALES
+
 
 ### Obtener todos los menús
 GET {{baseUrl}}/menus
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Obtener menú por ID
 GET {{baseUrl}}/menus/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Crear un nuevo menú
 POST {{baseUrl}}/menus
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "Menú del Día",
@@ -24,7 +25,7 @@ Authorization: {{auth}}
 ### Actualizar un menú
 PUT {{baseUrl}}/menus/1
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "Menú Ejecutivo",
@@ -34,4 +35,4 @@ Authorization: {{auth}}
 
 ### Eliminar un menú
 DELETE {{baseUrl}}/menus/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}

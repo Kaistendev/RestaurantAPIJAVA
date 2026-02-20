@@ -28,7 +28,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 @WebMvcTest(RestaurantTableController.class)
 @AutoConfigureMockMvc
-@Import(dev.kaisten.RestaurantAPI.config.SecurityConfig.class)
+@Import({ dev.kaisten.RestaurantAPI.config.SecurityConfig.class,
+        dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
 public class RestaurantTableControllerTest {
 
     @Autowired
@@ -40,8 +41,13 @@ public class RestaurantTableControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockitoBean
+    private dev.kaisten.RestaurantAPI.config.JwtService jwtService;
+
+    @MockitoBean
+    private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     public void getAllTables_whenClient_shouldReturnTables() throws Exception {

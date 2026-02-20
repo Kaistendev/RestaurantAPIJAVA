@@ -1,56 +1,48 @@
 package dev.kaisten.RestaurantAPI.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-
-import static org.springframework.security.config.Customizer.withDefaults;
-
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorize -> authorize
-                        // Registro público
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+        private final JwtAuthenticationFilter jwtAuthFilter;
+        private final AuthenticationProvider authenticationProvider;
 
-                        // Auth: Login requiere credenciales válidas
-                        .requestMatchers("/api/v1/auth/**").authenticated()
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .authorizeHttpRequests(authorize -> authorize
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/menus/**",
+                                                                "/api/v1/dishes/**", "/api/v1/restaurants/**")
+                                                .permitAll()
+                                                .requestMatchers("/api/v1/dishes/**", "/api/v1/menus/**",
+                                                                "/api/v1/restaurants/**")
+                                                .hasRole("RESTAURANT")
+                                                .requestMatchers(HttpMethod.GET, "/api/v1/tables/**")
+                                                .hasAnyRole("RESTAURANT", "CLIENT")
+                                                .requestMatchers("/api/v1/tables/**").hasRole("RESTAURANT")
+                                                .requestMatchers("/api/v1/users/**").authenticated()
+                                                .anyRequest().authenticated())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authenticationProvider(authenticationProvider)
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-                        // Lectura pública para Menús, Platos y Restaurantes
-                        .requestMatchers(HttpMethod.GET, "/api/v1/menus/**", "/api/v1/dishes/**",
-                                "/api/v1/restaurants/**")
-                        .permitAll()
-
-                        // Solo RESTAURANT puede gestionar Platos, Menús y Restaurantes (Mutaciones)
-                        .requestMatchers("/api/v1/dishes/**", "/api/v1/menus/**", "/api/v1/restaurants/**")
-                        .hasRole("RESTAURANT")
-
-                        // Gestión de Mesas: Solo RESTAURANT puede crear/editar/borrar
-                        .requestMatchers(HttpMethod.GET, "/api/v1/tables/**").hasAnyRole("RESTAURANT", "CLIENT")
-                        .requestMatchers("/api/v1/tables/**").hasRole("RESTAURANT")
-
-                        // Perfil de usuario: Cualquier usuario autenticado
-                        .requestMatchers("/api/v1/users/**").authenticated()
-
-                        .anyRequest().authenticated())
-                .httpBasic(withDefaults());
-        return http.build();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+                return http.build();
+        }
 }

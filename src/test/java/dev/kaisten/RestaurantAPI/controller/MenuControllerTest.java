@@ -30,7 +30,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 @WebMvcTest(MenuController.class)
 @AutoConfigureMockMvc
-@Import(dev.kaisten.RestaurantAPI.config.SecurityConfig.class)
+@Import({ dev.kaisten.RestaurantAPI.config.SecurityConfig.class,
+        dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
 public class MenuControllerTest {
 
     @Autowired
@@ -42,8 +43,13 @@ public class MenuControllerTest {
     @MockitoBean
     private UserDetailsService userDetailsService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockitoBean
+    private dev.kaisten.RestaurantAPI.config.JwtService jwtService;
+
+    @MockitoBean
+    private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
     public void getAllMenus_shouldReturnMenus() throws Exception {
@@ -65,9 +71,9 @@ public class MenuControllerTest {
         when(menuService.create(any(MenuRequestDTO.class))).thenReturn(response);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/menus")
-                        .with(user("admin").roles("RESTAURANT"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .with(user("admin").roles("RESTAURANT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("New Menu"));
     }
@@ -80,9 +86,9 @@ public class MenuControllerTest {
         when(menuService.update(eq(1L), any(MenuRequestDTO.class))).thenReturn(response);
 
         mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/menus/1")
-                        .with(user("admin").roles("RESTAURANT"))
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                .with(user("admin").roles("RESTAURANT"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("Updated Menu"));
     }
@@ -91,7 +97,7 @@ public class MenuControllerTest {
     public void deleteMenu_whenRestaurant_shouldDeleteMenu() throws Exception {
         doNothing().when(menuService).delete(1L);
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/menus/1")
-                        .with(user("admin").roles("RESTAURANT")))
+                .with(user("admin").roles("RESTAURANT")))
                 .andExpect(MockMvcResultMatchers.status().isNoContent());
     }
 }

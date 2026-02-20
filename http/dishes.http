@@ -1,19 +1,20 @@
 ### Variables Globales
-@baseUrl = http://localhost:8080/api/v1
-@auth = Basic tu_usuario tu_password
+@baseUrl = http://localhost:9191/api/v1
+@authToken = ///CREDENCIALES
+
 
 ### Obtener todos los platos (Paginado)
 GET {{baseUrl}}/dishes?page=0&size=10
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Obtener plato por ID
 GET {{baseUrl}}/dishes/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 ### Crear un nuevo plato
 POST {{baseUrl}}/dishes
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "Pasta Carbonara",
@@ -25,7 +26,7 @@ Authorization: {{auth}}
 ### Actualizar un plato
 PUT {{baseUrl}}/dishes/1
 Content-Type: application/json
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
 
 {
     "name": "Pasta Carbonara Premium",
@@ -36,4 +37,4 @@ Authorization: {{auth}}
 
 ### Eliminar un plato
 DELETE {{baseUrl}}/dishes/1
-Authorization: {{auth}}
+Authorization: Bearer {{authToken}}
