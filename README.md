@@ -88,7 +88,3 @@ Integration tests use **Testcontainers** to spin up real instances of PostgreSQL
 ```
 
 ---
-
-## 📄 Documentation
-
-For detailed architectural rules and internal conventions used in this project, please refer to [GEMINI.md](./GEMINI.md).
