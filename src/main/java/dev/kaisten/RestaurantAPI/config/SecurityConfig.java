@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthFilter;
+        private final RateLimitingFilter rateLimitingFilter;
         private final AuthenticationProvider authenticationProvider;
 
         @Bean
@@ -36,11 +37,26 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/v1/tables/**")
                                                 .hasAnyRole("RESTAURANT", "CLIENT")
                                                 .requestMatchers("/api/v1/tables/**").hasRole("RESTAURANT")
+                                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
+                                                .requestMatchers("/actuator/health").permitAll()
                                                 .requestMatchers("/api/v1/users/**").authenticated()
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .cors(cors -> cors.configurationSource(request -> {
+                                        var corsConfiguration = new org.springframework.web.cors.CorsConfiguration();
+                                        corsConfiguration.setAllowedOrigins(java.util.List.of("http://localhost:3000",
+                                                        "http://localhost:4200"));
+                                        corsConfiguration.setAllowedMethods(
+                                                        java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                                        corsConfiguration.setAllowedHeaders(java.util.List.of("*"));
+                                        corsConfiguration.setAllowCredentials(true);
+                                        return corsConfiguration;
+                                }))
                                 .authenticationProvider(authenticationProvider)
+                                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();

@@ -4,9 +4,12 @@ import dev.kaisten.RestaurantAPI.config.JwtService;
 import dev.kaisten.RestaurantAPI.dto.AuthResponseDTO;
 import dev.kaisten.RestaurantAPI.dto.LoginRequestDTO;
 import dev.kaisten.RestaurantAPI.dto.RegisterRequestDTO;
+import dev.kaisten.RestaurantAPI.dto.TokenRefreshRequestDTO;
+import dev.kaisten.RestaurantAPI.entity.RefreshToken;
 import dev.kaisten.RestaurantAPI.entity.User;
 import dev.kaisten.RestaurantAPI.entity.UserRole;
 import dev.kaisten.RestaurantAPI.repository.UserRepository;
+import dev.kaisten.RestaurantAPI.service.RefreshTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,7 @@ public class AuthController {
         private final UserRepository userRepository;
         private final JwtService jwtService;
         private final PasswordEncoder passwordEncoder;
+        private final RefreshTokenService refreshTokenService;
 
         @PostMapping("/register")
         public ResponseEntity<AuthResponseDTO> register(@RequestBody @Valid RegisterRequestDTO request) {
@@ -45,16 +49,18 @@ public class AuthController {
                                 .role(role)
                                 .build();
 
-                userRepository.save(user);
+                user = userRepository.save(user);
 
                 String jwtToken = jwtService.generateToken(user);
+                RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
                 return ResponseEntity.ok(new AuthResponseDTO(
                                 user.getEmail(),
                                 user.getFirstName(),
                                 user.getLastName(),
                                 user.getRole(),
-                                jwtToken));
+                                jwtToken,
+                                refreshToken.getToken()));
         }
 
         @PostMapping("/login")
@@ -68,12 +74,32 @@ public class AuthController {
                                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
                 String jwtToken = jwtService.generateToken(user);
+                RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
                 return ResponseEntity.ok(new AuthResponseDTO(
                                 user.getEmail(),
                                 user.getFirstName(),
                                 user.getLastName(),
                                 user.getRole(),
-                                jwtToken));
+                                jwtToken,
+                                refreshToken.getToken()));
+        }
+
+        @PostMapping("/refresh-token")
+        public ResponseEntity<?> refreshToken(@RequestBody @Valid TokenRefreshRequestDTO request) {
+                return refreshTokenService.findByToken(request.refreshToken())
+                                .map(refreshTokenService::verifyExpiration)
+                                .map(RefreshToken::getUser)
+                                .map(user -> {
+                                        String token = jwtService.generateToken(user);
+                                        return ResponseEntity.ok(new AuthResponseDTO(
+                                                        user.getEmail(),
+                                                        user.getFirstName(),
+                                                        user.getLastName(),
+                                                        user.getRole(),
+                                                        token,
+                                                        request.refreshToken()));
+                                })
+                                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
         }
 }

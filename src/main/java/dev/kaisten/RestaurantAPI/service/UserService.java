@@ -7,7 +7,7 @@ import dev.kaisten.RestaurantAPI.exception.ResourceNotFoundException;
 import dev.kaisten.RestaurantAPI.mapper.UserMapper;
 import dev.kaisten.RestaurantAPI.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -37,10 +37,6 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO create(UserRequestDTO requestDTO) {
-        userRepository.findByEmail(requestDTO.email()).ifPresent(u -> {
-            throw new DataIntegrityViolationException("User with email " + requestDTO.email() + " already exists");
-        });
-
         User user = userMapper.toEntity(requestDTO);
         user.setPassword(passwordEncoder.encode(requestDTO.password()));
         user = userRepository.save(user);
@@ -51,12 +47,6 @@ public class UserService {
     public UserResponseDTO update(Long id, UserRequestDTO requestDTO) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-
-        if (!existingUser.getEmail().equals(requestDTO.email())) {
-            userRepository.findByEmail(requestDTO.email()).ifPresent(u -> {
-                throw new DataIntegrityViolationException("User with email " + requestDTO.email() + " already exists");
-            });
-        }
 
         existingUser.setFirstName(requestDTO.firstName());
         existingUser.setLastName(requestDTO.lastName());

@@ -30,59 +30,66 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @WebMvcTest(UserController.class)
 @AutoConfigureMockMvc
 @Import({ dev.kaisten.RestaurantAPI.config.SecurityConfig.class,
-        dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
+                dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
 public class UserControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean
-    private UserService userService;
+        @MockitoBean
+        private UserService userService;
 
-    @MockitoBean
-    private UserDetailsService userDetailsService;
+        @MockitoBean
+        private dev.kaisten.RestaurantAPI.repository.UserRepository userRepository;
 
-    @MockitoBean
-    private dev.kaisten.RestaurantAPI.config.JwtService jwtService;
+        @MockitoBean
+        private UserDetailsService userDetailsService;
 
-    @MockitoBean
-    private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
+        @MockitoBean
+        private dev.kaisten.RestaurantAPI.config.JwtService jwtService;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+        @MockitoBean
+        private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
 
-    @Test
-    public void getAllUsers_whenAuthenticated_shouldReturnUsers() throws Exception {
-        UserResponseDTO userRes = new UserResponseDTO(1L, "John", "Doe", "john.doe@example.com", UserRole.CLIENT);
-        Page<UserResponseDTO> page = new PageImpl<>(Collections.singletonList(userRes));
+        private ObjectMapper objectMapper = new ObjectMapper();
 
-        when(userService.findAll(any(Pageable.class))).thenReturn(page);
+        @Test
+        public void getAllUsers_whenAuthenticated_shouldReturnUsers() throws Exception {
+                UserResponseDTO userRes = new UserResponseDTO(1L, "John", "Doe", "john.doe@example.com",
+                                UserRole.CLIENT);
+                Page<UserResponseDTO> page = new PageImpl<>(Collections.singletonList(userRes));
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users")
-                .with(user("admin").roles("RESTAURANT")))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].email").value("john.doe@example.com"));
-    }
+                when(userService.findAll(any(Pageable.class))).thenReturn(page);
 
-    @Test
-    public void createUser_shouldRegisterPublicly() throws Exception {
-        UserRequestDTO request = new UserRequestDTO("John", "Doe", "john.doe@example.com", "password123",
-                UserRole.CLIENT);
-        UserResponseDTO response = new UserResponseDTO(1L, "John", "Doe", "john.doe@example.com", UserRole.CLIENT);
+                mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/users")
+                                .with(user("admin").roles("RESTAURANT")))
+                                .andExpect(MockMvcResultMatchers.status().isOk())
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.content[0].email")
+                                                .value("john.doe@example.com"));
+        }
 
-        when(userService.create(any(UserRequestDTO.class))).thenReturn(response);
+        @Test
+        public void createUser_shouldRegisterPublicly() throws Exception {
+                UserRequestDTO request = new UserRequestDTO("John", "Doe", "john.doe@example.com", "password123",
+                                UserRole.CLIENT);
+                UserResponseDTO response = new UserResponseDTO(1L, "John", "Doe", "john.doe@example.com",
+                                UserRole.CLIENT);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("john.doe@example.com"));
-    }
+                when(userRepository.findByEmail("john.doe@example.com")).thenReturn(java.util.Optional.empty());
+                when(userService.create(any(UserRequestDTO.class))).thenReturn(response);
 
-    @Test
-    public void deleteUser_whenAuthenticated_shouldDeleteUser() throws Exception {
-        doNothing().when(userService).delete(1L);
-        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/users/1")
-                .with(user("admin").roles("RESTAURANT")))
-                .andExpect(MockMvcResultMatchers.status().isNoContent());
-    }
+                mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(MockMvcResultMatchers.status().isCreated())
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("john.doe@example.com"));
+        }
+
+        @Test
+        public void deleteUser_whenAuthenticated_shouldDeleteUser() throws Exception {
+                doNothing().when(userService).delete(1L);
+                mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/users/1")
+                                .with(user("admin").roles("RESTAURANT")))
+                                .andExpect(MockMvcResultMatchers.status().isNoContent());
+        }
 }

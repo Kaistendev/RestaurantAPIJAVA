@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: restaurant-db
+    environment:
+      POSTGRES_DB: RestaurantAPI
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD:
+    ports:
+      - "2712:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: restaurant-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --loglevel warning
+
+  app:
+    build: .
+    container_name: restaurant-app
+    ports:
+      - "9191:9191"
+    environment:
+      spring.datasource.url: jdbc:postgresql://postgres:5432/RestaurantAPI
+      spring.datasource.username: postgres
+      spring.datasource.password: password
+      spring.data.redis.host: redis
+      jwt.secret: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      jwt.refresh-expiration: 604800000
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:

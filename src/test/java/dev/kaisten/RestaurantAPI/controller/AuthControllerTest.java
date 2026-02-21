@@ -29,77 +29,84 @@ import static org.mockito.Mockito.when;
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false) // Disable security filters for this unit test to focus on controller logic
 @Import({ dev.kaisten.RestaurantAPI.config.SecurityConfig.class,
-        dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
+                dev.kaisten.RestaurantAPI.config.JwtAuthenticationFilter.class })
 public class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private UserRepository userRepository;
+        @MockitoBean
+        private UserRepository userRepository;
 
-    @MockitoBean
-    private UserDetailsService userDetailsService;
+        @MockitoBean
+        private UserDetailsService userDetailsService;
 
-    @MockitoBean
-    private JwtService jwtService;
+        @MockitoBean
+        private JwtService jwtService;
 
-    @MockitoBean
-    private AuthenticationManager authenticationManager;
+        @MockitoBean
+        private AuthenticationManager authenticationManager;
 
-    @MockitoBean
-    private PasswordEncoder passwordEncoder;
+        @MockitoBean
+        private PasswordEncoder passwordEncoder;
 
-    @MockitoBean
-    private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
+        @MockitoBean
+        private dev.kaisten.RestaurantAPI.service.RefreshTokenService refreshTokenService;
 
-    @Test
-    public void login_whenValidCredentials_shouldReturnToken() throws Exception {
-        User user = User.builder()
-                .email("test@example.com")
-                .firstName("Test")
-                .lastName("User")
-                .role(UserRole.CLIENT)
-                .password("encodedPassword")
-                .build();
+        @MockitoBean
+        private org.springframework.security.authentication.AuthenticationProvider authenticationProvider;
 
-        LoginRequestDTO loginRequest = new LoginRequestDTO("test@example.com", "password");
+        @Test
+        public void login_whenValidCredentials_shouldReturnToken() throws Exception {
+                User user = User.builder()
+                                .email("test@example.com")
+                                .firstName("Test")
+                                .lastName("User")
+                                .role(UserRole.CLIENT)
+                                .password("encodedPassword")
+                                .build();
 
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwt_token");
+                LoginRequestDTO loginRequest = new LoginRequestDTO("test@example.com", "password");
+                var refreshToken = dev.kaisten.RestaurantAPI.entity.RefreshToken.builder()
+                                .token("refresh_token")
+                                .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("test@example.com"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value("jwt_token"));
-    }
+                when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+                when(jwtService.generateToken(any(User.class))).thenReturn("jwt_token");
+                when(refreshTokenService.createRefreshToken(any())).thenReturn(refreshToken);
 
-    @Test
-    public void register_whenValidRequest_shouldReturnToken() throws Exception {
-        RegisterRequestDTO registerRequest = new RegisterRequestDTO(
-                "New", "User", "new@example.com", "password", UserRole.CLIENT);
+                mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(MockMvcResultMatchers.status().isOk())
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("test@example.com"))
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value("jwt_token"))
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.refreshToken").value("refresh_token"));
+        }
 
-        // User object for mocking repository response is not explicitly needed if we
-        // return empty
-        // But if we wanted to mock a "found after save" scenario we would use it.
-        // For now, we simulate that email is not taken.
+        @Test
+        public void register_whenValidRequest_shouldReturnToken() throws Exception {
+                RegisterRequestDTO registerRequest = new RegisterRequestDTO(
+                                "New", "User", "new@example.com", "password", UserRole.CLIENT);
 
-        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
-        // We can't easily mock the save return because it returns void/entity, but we
-        // can verify interaction
-        when(jwtService.generateToken(any(User.class))).thenReturn("jwt_token");
+                when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+                when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
+                when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArguments()[0]);
+                when(jwtService.generateToken(any(User.class))).thenReturn("jwt_token");
+                var refreshToken = dev.kaisten.RestaurantAPI.entity.RefreshToken.builder()
+                                .token("refresh_token")
+                                .build();
+                when(refreshTokenService.createRefreshToken(any())).thenReturn(refreshToken);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(registerRequest)))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("new@example.com"))
-                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value("jwt_token"));
-    }
+                mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(registerRequest)))
+                                .andExpect(MockMvcResultMatchers.status().isOk())
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.email").value("new@example.com"))
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.token").value("jwt_token"))
+                                .andExpect(MockMvcResultMatchers.jsonPath("$.refreshToken").value("refresh_token"));
+        }
 }

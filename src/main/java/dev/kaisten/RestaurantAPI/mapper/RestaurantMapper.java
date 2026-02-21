@@ -6,7 +6,7 @@ import dev.kaisten.RestaurantAPI.entity.Restaurant;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = {MenuMapper.class, RestaurantTableMapper.class})
+@Mapper(componentModel = "spring", uses = { MenuMapper.class, RestaurantTableMapper.class })
 public interface RestaurantMapper {
 
     RestaurantResponseDTO toDto(Restaurant restaurant);
@@ -14,5 +14,10 @@ public interface RestaurantMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "menus", ignore = true)
     @Mapping(target = "tables", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "deletedAt", ignore = true)
+    @Mapping(target = "createdBy", ignore = true)
+    @Mapping(target = "lastModifiedBy", ignore = true)
     Restaurant toEntity(RestaurantRequestDTO requestDTO);
 }

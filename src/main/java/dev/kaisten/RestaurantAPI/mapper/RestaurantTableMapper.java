@@ -15,5 +15,7 @@ public interface RestaurantTableMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "restaurant", source = "restaurant")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     RestaurantTable toEntity(RestaurantTableRequestDTO requestDTO, Restaurant restaurant);
 }
